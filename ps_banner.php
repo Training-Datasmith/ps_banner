@@ -75,16 +75,9 @@ class Ps_Banner extends Module implements WidgetInterface
         if (!Module::isInstalled(self::PS_16_EQUIVALENT_MODULE)) {
             return true;
         }
-
-        if (version_compare(_PS_VERSION_, '8.0.0', '>=')) {
-            $blockBannerImgValue = Configuration::getConfigInMultipleLangs('BLOCKBANNER_IMG');
-            $blockBannerLinkValue = Configuration::getConfigInMultipleLangs('BLOCKBANNER_LINK');
-            $blockBannerDescValue = Configuration::getConfigInMultipleLangs('BLOCKBANNER_DESC');
-        } else {
-            $blockBannerImgValue = Configuration::getInt('BLOCKBANNER_IMG');
-            $blockBannerLinkValue = Configuration::getInt('BLOCKBANNER_LINK');
-            $blockBannerDescValue = Configuration::getInt('BLOCKBANNER_DESC');
-        }
+        $blockBannerImgValue = Configuration::getInt('BLOCKBANNER_IMG');
+        $blockBannerLinkValue = Configuration::getInt('BLOCKBANNER_LINK');
+        $blockBannerDescValue = Configuration::getInt('BLOCKBANNER_DESC');
 
         // Data migration
         Configuration::updateValue('BANNER_IMG', $blockBannerImgValue);
@@ -148,21 +141,17 @@ class Ps_Banner extends Module implements WidgetInterface
                     && !empty($_FILES['BANNER_IMG_' . $lang['id_lang']]['tmp_name'])) {
                     if ($error = ImageManager::validateUpload($_FILES['BANNER_IMG_' . $lang['id_lang']], 4000000)) {
                         return $this->displayError($error);
-                    } else {
-                        $ext = substr($_FILES['BANNER_IMG_' . $lang['id_lang']]['name'], strrpos($_FILES['BANNER_IMG_' . $lang['id_lang']]['name'], '.') + 1);
-                        $file_name = md5($_FILES['BANNER_IMG_' . $lang['id_lang']]['name']) . '.' . $ext;
-
-                        if (!move_uploaded_file($_FILES['BANNER_IMG_' . $lang['id_lang']]['tmp_name'], dirname(__FILE__) . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . $file_name)) {
-                            return $this->displayError($this->trans('An error occurred while attempting to upload the file.', [], 'Admin.Notifications.Error'));
-                        } else {
-                            if (Configuration::hasContext('BANNER_IMG', $lang['id_lang'], Shop::getContext())
-                                && Configuration::get('BANNER_IMG', $lang['id_lang']) != $file_name) {
-                                @unlink(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . Configuration::get('BANNER_IMG', $lang['id_lang']));
-                            }
-
-                            $values['BANNER_IMG'][$lang['id_lang']] = $file_name;
-                        }
                     }
+                    $ext = substr($_FILES['BANNER_IMG_' . $lang['id_lang']]['name'], strrpos($_FILES['BANNER_IMG_' . $lang['id_lang']]['name'], '.') + 1);
+                    $file_name = md5($_FILES['BANNER_IMG_' . $lang['id_lang']]['name']) . '.' . $ext;
+                    if (!move_uploaded_file($_FILES['BANNER_IMG_' . $lang['id_lang']]['tmp_name'], __DIR__ . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . $file_name)) {
+                        return $this->displayError($this->trans('An error occurred while attempting to upload the file.', [], 'Admin.Notifications.Error'));
+                    }
+                    if (Configuration::hasContext('BANNER_IMG', $lang['id_lang'], Shop::getContext())
+                        && Configuration::get('BANNER_IMG', $lang['id_lang']) != $file_name) {
+                        @unlink(__DIR__ . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . Configuration::get('BANNER_IMG', $lang['id_lang']));
+                    }
+                    $values['BANNER_IMG'][$lang['id_lang']] = $file_name;
 
                     $update_images_values = true;
                 }
@@ -235,7 +224,7 @@ class Ps_Banner extends Module implements WidgetInterface
         $helper->table = $this->table;
         $helper->default_form_language = $lang->id;
         $helper->module = $this;
-        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
+        $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ?: 0;
         $helper->identifier = $this->identifier;
         $helper->submit_action = 'submitStoreConf';
         $helper->currentIndex = $this->context->link->getAdminLink('AdminModules', false) . '&configure=' . $this->name . '&tab_module=' . $this->tab . '&module_name=' . $this->name;
@@ -299,10 +288,10 @@ class Ps_Banner extends Module implements WidgetInterface
         ];
     }
 
-    private function updateUrl($link)
+    private function updateUrl(string $link): string
     {
         if (substr($link, 0, 7) !== 'http://' && substr($link, 0, 8) !== 'https://') {
-            $link = 'http://' . $link;
+            return 'http://' . $link;
         }
 
         return $link;
