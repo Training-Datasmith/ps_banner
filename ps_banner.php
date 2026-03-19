@@ -158,7 +158,11 @@ class Ps_Banner extends Module implements WidgetInterface
                     $update_images_values = true;
                 }
 
-                $values['BANNER_LINK'][$lang['id_lang']] = Tools::getValue('BANNER_LINK_' . $lang['id_lang']);
+                $link = Tools::getValue('BANNER_LINK_' . $lang['id_lang']);
+                if (!empty($link) && !preg_match('#^https?://#i', $link)) {
+                    $link = 'https://' . $link;
+                }
+                $values['BANNER_LINK'][$lang['id_lang']] = $link;
                 $values['BANNER_DESC'][$lang['id_lang']] = Tools::getValue('BANNER_DESC_' . $lang['id_lang']);
             }
 
