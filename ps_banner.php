@@ -157,7 +157,10 @@ class Ps_Banner extends Module implements WidgetInterface
                         } else {
                             if (Configuration::hasContext('BANNER_IMG', $lang['id_lang'], Shop::getContext())
                                 && Configuration::get('BANNER_IMG', $lang['id_lang']) != $file_name) {
-                                @unlink(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . Configuration::get('BANNER_IMG', $lang['id_lang']));
+                                $oldImageName = Configuration::get('BANNER_IMG', $lang['id_lang']);
+                                if ($this->shouldDeleteBannerImageFile($oldImageName, (int) $lang['id_lang'])) {
+                                    @unlink(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'img' . DIRECTORY_SEPARATOR . $oldImageName);
+                                }
                             }
 
                             $values['BANNER_IMG'][$lang['id_lang']] = $file_name;
@@ -306,5 +309,29 @@ class Ps_Banner extends Module implements WidgetInterface
         }
 
         return $link;
+    }
+
+    /**
+     * @param string|null $oldImageName
+     * @param int $currentLangId
+     *
+     * @return bool
+     */
+    private function shouldDeleteBannerImageFile($oldImageName, $currentLangId)
+    {
+        if (empty($oldImageName)) {
+            return false;
+        }
+
+        foreach (Language::getLanguages(false) as $lang) {
+            if ((int) $lang['id_lang'] === (int) $currentLangId) {
+                continue;
+            }
+            if (Configuration::get('BANNER_IMG', (int) $lang['id_lang']) === $oldImageName) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

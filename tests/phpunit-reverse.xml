@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="Support/bootstrap.php"
+         colors="true"
+         verbose="true">
+    <testsuites>
+        <testsuite name="ps_banner_reverse">
+            <file>PsBannerWidgetTest.php</file>
+            <file>PsBannerUploadTest.php</file>
+            <file>PsBannerPostProcessTest.php</file>
+            <file>PsBannerConfigFormTest.php</file>
+            <file>PsBannerLanguageHookTest.php</file>
+            <file>PsBannerLegacyMigrationTest.php</file>
+            <file>PsBannerUninstallTest.php</file>
+            <file>PsBannerInstallTest.php</file>
+            <file>PsBannerConstructorTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

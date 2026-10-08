@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="Support/bootstrap-ps17.php"
+         colors="true"
+         verbose="true">
+    <testsuites>
+        <testsuite name="ps_banner_ps17">
+            <file>PsBannerLegacyMigrationPs17Test.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>
