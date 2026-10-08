@@ -183,6 +183,9 @@ class Configuration
 
     public static function getConfigInMultipleLangs($key, $idShopGroup = null, $idShop = null)
     {
+        if (defined('PS_BANNER_PS17_HARNESS') && PS_BANNER_PS17_HARNESS) {
+            throw new RuntimeException('Configuration::getConfigInMultipleLangs must not be called on PS 1.7 harness');
+        }
         $out = [];
         foreach (Language::getIDs() as $idLang) {
             $out[$idLang] = self::get($key, $idLang);
@@ -193,7 +196,15 @@ class Configuration
 
     public static function getInt($key, $idShopGroup = null, $idShop = null)
     {
-        return self::getConfigInMultipleLangs($key, $idShopGroup, $idShop);
+        if (!defined('PS_BANNER_PS17_HARNESS') || !PS_BANNER_PS17_HARNESS) {
+            throw new RuntimeException('Configuration::getInt must not be called on PS 8.1+ harness');
+        }
+        $out = [];
+        foreach (Language::getIDs() as $idLang) {
+            $out[$idLang] = self::get($key, $idLang);
+        }
+
+        return $out;
     }
 
 }

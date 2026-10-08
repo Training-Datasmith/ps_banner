@@ -17,42 +17,47 @@ class PsBannerUploadTest extends PsBannerTestCase
     public static function setUpBeforeClass()
     {
         parent::setUpBeforeClass();
-        self::$sale70Hash = hash_file('sha256', dirname(__DIR__) . '/img/sale70.png');
-        self::$moduleCopy = sys_get_temp_dir() . '/ps_banner_upload_' . uniqid('', true);
-        mkdir(self::$moduleCopy . '/img', 0777, true);
-        copy(dirname(__DIR__) . '/ps_banner.php', self::$moduleCopy . '/ps_banner.php');
-        copy(dirname(__DIR__) . '/img/sale70.png', self::$moduleCopy . '/img/sale70.png');
+        try {
+            self::$sale70Hash = hash_file('sha256', dirname(__DIR__) . '/img/sale70.png');
+            self::$moduleCopy = sys_get_temp_dir() . '/ps_banner_upload_' . uniqid('', true);
+            mkdir(self::$moduleCopy . '/img', 0777, true);
+            copy(dirname(__DIR__) . '/ps_banner.php', self::$moduleCopy . '/ps_banner.php');
+            copy(dirname(__DIR__) . '/img/sale70.png', self::$moduleCopy . '/img/sale70.png');
 
-        self::$serverPort = self::pickEphemeralPort();
-        $cmd = sprintf(
-            '%s -S 127.0.0.1:%d -t %s',
-            escapeshellarg(PHP_BINARY),
-            self::$serverPort,
-            escapeshellarg(__DIR__ . '/Support')
-        );
-        putenv('PS_BANNER_MODULE_COPY=' . self::$moduleCopy);
-        $descriptor = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-        self::$serverProc = proc_open($cmd, $descriptor, $pipes);
-        if (!is_resource(self::$serverProc)) {
-            throw new RuntimeException('Failed to start upload server');
+            self::$serverPort = self::pickEphemeralPort();
+            $cmd = sprintf(
+                '%s -S 127.0.0.1:%d -t %s',
+                escapeshellarg(PHP_BINARY),
+                self::$serverPort,
+                escapeshellarg(__DIR__ . '/Support')
+            );
+            putenv('PS_BANNER_MODULE_COPY=' . self::$moduleCopy);
+            $descriptor = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
+            self::$serverProc = proc_open($cmd, $descriptor, $pipes);
+            if (!is_resource(self::$serverProc)) {
+                throw new RuntimeException('Failed to start upload server');
+            }
+            fclose($pipes[0]);
+            self::waitForServerReady($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+        } catch (Exception $e) {
+            self::stopUploadServer();
+            if (is_string(self::$moduleCopy) && is_dir(self::$moduleCopy)) {
+                self::removeDir(self::$moduleCopy);
+                self::$moduleCopy = '';
+            }
+            throw $e;
         }
-        fclose($pipes[0]);
-        self::waitForServerReady($pipes[2]);
-        fclose($pipes[1]);
-        fclose($pipes[2]);
     }
 
     public static function tearDownAfterClass()
     {
-        if (is_resource(self::$serverProc)) {
-            proc_terminate(self::$serverProc);
-            proc_close(self::$serverProc);
-            self::$serverProc = null;
-        }
+        self::stopUploadServer();
         if (is_dir(self::$moduleCopy)) {
             self::removeDir(self::$moduleCopy);
         }
@@ -155,6 +160,15 @@ class PsBannerUploadTest extends PsBannerTestCase
     private static function jpegBody()
     {
         return file_get_contents(dirname(__DIR__) . '/img/sale70.png');
+    }
+
+    private static function stopUploadServer()
+    {
+        if (is_resource(self::$serverProc)) {
+            proc_terminate(self::$serverProc);
+            proc_close(self::$serverProc);
+            self::$serverProc = null;
+        }
     }
 
     private static function pickEphemeralPort()
